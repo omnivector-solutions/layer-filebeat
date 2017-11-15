@@ -1,8 +1,11 @@
+import os
+
 from charms.reactive import (
-    when,
-    when_not,
+    clear_flag,
+    context,
     set_flag,
-    clear_flag
+    when,
+    when_not
 )
 from charms.reactive import hook
 
@@ -11,11 +14,11 @@ from charmhelpers.core.host import restart_on_change, service_stop
 
 import charms.apt
 
-from elasticbeats import render_without_context
-from elasticbeats import enable_beat_on_boot
-from elasticbeats import push_beat_index
-
-import os
+from charms.layer.elasticbeats import (
+    render_without_context,
+    enable_beat_on_boot,
+    push_beat_index
+)
 
 
 @restart_on_change('/etc/filebeat/filebeat.yml', ['filebeat'])
@@ -38,11 +41,10 @@ def enlist_packetbeat():
 
 
 @when('apt.installed.filebeat')
-@when('elasticsearch.available')
+@when('endpoint.elasticsearch.host-port')
 @when_not('filebeat.index.pushed')
-def push_filebeat_index(elasticsearch):
-    hosts = elasticsearch.list_unit_data()
-    for host in hosts:
+def push_filebeat_index():
+    for host in context.endpoints.elasticsearch.relation_data():
         host_string = "{}:{}".format(host['host'], host['port'])
     push_beat_index(host_string, 'filebeat')
     set_flag('filebeat.index.pushed')

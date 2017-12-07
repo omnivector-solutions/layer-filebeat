@@ -2,7 +2,7 @@ import os
 
 from charms.reactive import (
     clear_flag,
-    context,
+    endpoint_from_flag,
     set_flag,
     when,
     when_not
@@ -41,10 +41,11 @@ def enlist_packetbeat():
 
 
 @when('apt.installed.filebeat')
-@when('endpoint.elasticsearch.host-port')
+@when('endpoint.elasticsearch.joined')
 @when_not('filebeat.index.pushed')
 def push_filebeat_index():
-    for host in context.endpoints.elasticsearch.relation_data():
+    for host in endpoint_from_flag(
+       'endpoint.elasticsearch.joined').relation_data():
         host_string = "{}:{}".format(host['host'], host['port'])
     push_beat_index(host_string, 'filebeat')
     set_flag('filebeat.index.pushed')
